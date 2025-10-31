@@ -1,0 +1,19 @@
+npm verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+npm info using npm@11.6.2
+npm info using node@v25.1.0
+npm verbose title npm run build
+npm verbose argv "run" "build" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:C:\Users\allro\AppData\Local\npm-cache\_logs\2025-10-31T14_21_49_545Z-
+npm verbose logfile C:\Users\allro\AppData\Local\npm-cache\_logs\2025-10-31T14_21_49_545Z-debug-0.log
+
+> nextn@0.1.0 build
+> NODE_ENV=production next build
+
+'NODE_ENV' is not recognized as an internal or external command,
+operable program or batch file.
+npm verbose cwd D:\Projects\React\Cloud Tracker
+npm verbose os Windows_NT 10.0.26100
+npm verbose node v25.1.0
+npm verbose npm  v11.6.2
+npm verbose exit 1
+npm verbose code 1
