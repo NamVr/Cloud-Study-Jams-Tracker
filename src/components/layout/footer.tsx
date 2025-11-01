@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail, Globe, Instagram, Linkedin, X, Link2 as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export function Footer() {
   const socialLinks = [
@@ -28,6 +29,15 @@ export function Footer() {
                 </Button>
             ))}
         </div>
+
+        <Separator className="my-4 w-1/2" />
+        
+        <p className="text-sm text-muted-foreground">
+            Made with ❤️ by{' '}
+            <Link href="https://www.linkedin.com/in/namanvrati/" target="_blank" className="font-medium text-primary hover:underline underline-offset-4">
+                Naman Vrati
+            </Link>
+        </p>
       </div>
     </footer>
   );

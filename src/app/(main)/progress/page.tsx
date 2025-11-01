@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import { Award, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import {
@@ -68,13 +69,26 @@ const processData = (db: Database): { participants: Participant[], teams: Team[]
 export default function ProgressPage() {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [allParticipants, setAllParticipants] = useState<Participant[]>([]);
+  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const { participants: processedParticipants } = processData(database as Database);
-    setParticipants(processedParticipants);
+    setAllParticipants(processedParticipants);
     setLastRefreshed(new Date());
   }, []);
+
+  useEffect(() => {
+    const searchQuery = searchParams.get('q')?.toLowerCase() || '';
+    if (searchQuery) {
+        const filtered = allParticipants.filter(p => p.name.toLowerCase().includes(searchQuery));
+        setFilteredParticipants(filtered);
+    } else {
+        setFilteredParticipants(allParticipants);
+    }
+  }, [searchParams, allParticipants]);
 
   const teamsMap = new Map<string, Team>();
 
@@ -84,14 +98,14 @@ export default function ProgressPage() {
     // Simulate a refresh, as data is static
     setTimeout(() => {
       const { participants: processedParticipants } = processData(database as Database);
-      setParticipants(processedParticipants);
+      setAllParticipants(processedParticipants);
       setLastRefreshed(new Date());
       setIsRefreshing(false);
     }, 1000);
   };
   
   const getTeamInfo = (participantName: string) => {
-    const participantData = participants.find(p => p.name === participantName);
+    const participantData = allParticipants.find(p => p.name === participantName);
     const teamName = participantData?.teamName || 'N/A';
     // Dummy color until teams are fully implemented
     const teamColor = teamsMap.get(teamName)?.color || 'hsl(var(--foreground))';
@@ -142,7 +156,7 @@ export default function ProgressPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {participants.map((p, idx) => {
+            {filteredParticipants.map((p, idx) => {
               const teamInfo = getTeamInfo(p.name);
               const isRanked = typeof p.rank === 'number';
               const rankDisplay = isRanked ? p.rank : "-";
@@ -161,13 +175,13 @@ export default function ProgressPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Link href={p.profileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline font-medium">
+                      <Link href={p.profileUrl} target="_blank" className="hover:underline font-medium">
                         {p.name}
                       </Link>
                       {p.isSwagEligible && (
                         <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-300 border-none whitespace-nowrap">
                           <Award className="mr-1 h-3 w-3" />
-                          Swag EligibleSET 
+                          Swag Eligible
                         </Badge>
                       )}
                     </div>

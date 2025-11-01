@@ -22,7 +22,7 @@ interface HomePageData {
   totalParticipants: number;
   avgBadges: number;
   globalCompletion: number;
-  topGlobalPerformer: ProcessedParticipant | null;
+  recentTopPerformer: ProcessedParticipant | null;
   topTeam: Team | null;
   swagEligibleCount: number;
 }
@@ -36,21 +36,17 @@ const processHomePageData = (db: Database): HomePageData => {
       totalParticipants: 0,
       avgBadges: 0,
       globalCompletion: 0,
-      topGlobalPerformer: null,
+      recentTopPerformer: null,
       topTeam: null,
       swagEligibleCount: 0,
     };
   }
 
-  let totalBadges = 0;
-  let totalProgressSum = 0;
   let swagEligibleCount = 0;
 
   const processedParticipants: ProcessedParticipant[] = participantsList.map(p => {
     const totalCompletions = p.progress.SkillBadgesCount + p.progress.ArcadeGamesCount;
-    totalBadges += totalCompletions;
     const progressPercentage = Math.min(Math.round((totalCompletions / 20) * 100), 100);
-    totalProgressSum += progressPercentage;
     const rank = p.progress.Rank;
     const isSwagEligible = progressPercentage === 100 && typeof rank === 'number' && rank <= 100;
     if (isSwagEligible) {
@@ -77,6 +73,21 @@ const processHomePageData = (db: Database): HomePageData => {
     return a.name.localeCompare(b.name);
   });
   const sortedParticipants = [...rankedParticipants, ...unrankedParticipants];
+
+  // --- Find Recent Top Performer (last person to get 100%) ---
+  const completers = processedParticipants.filter(p => p.progressPercentage === 100 && typeof p.rank === 'number');
+  completers.sort((a, b) => (b.rank as number) - (a.rank as number));
+  const recentTopPerformer = completers.length > 0 ? completers[0] : null;
+
+
+  // --- Calculate metrics based on Top 100 ---
+  const top100Participants = sortedParticipants.slice(0, 100);
+  const top100TotalBadges = top100Participants.reduce((sum, p) => sum + p.badgesCompleted, 0);
+  const top100TotalProgressSum = top100Participants.reduce((sum, p) => sum + p.progressPercentage, 0);
+  
+  const avgBadges = top100Participants.length > 0 ? parseFloat((top100TotalBadges / top100Participants.length).toFixed(1)) : 0;
+  const globalCompletion = top100Participants.length > 0 ? Math.round(top100TotalProgressSum / top100Participants.length) : 0;
+
 
   // --- Process Teams for Top Team ---
   const teamsMap = new Map<string, RawParticipant[]>();
@@ -127,9 +138,9 @@ const processHomePageData = (db: Database): HomePageData => {
 
   return {
     totalParticipants,
-    avgBadges: totalParticipants > 0 ? parseFloat((totalBadges / totalParticipants).toFixed(1)) : 0,
-    globalCompletion: totalParticipants > 0 ? Math.round(totalProgressSum / totalParticipants) : 0,
-    topGlobalPerformer: sortedParticipants.length > 0 ? sortedParticipants[0] : null,
+    avgBadges,
+    globalCompletion,
+    recentTopPerformer,
     topTeam: sortedTeams.length > 0 ? sortedTeams[0] : null,
     swagEligibleCount,
   };
@@ -145,7 +156,7 @@ export default function LandingPage() {
   }, []);
   
   const topTeam = pageData?.topTeam;
-  const topGlobalPerformer = pageData?.topGlobalPerformer;
+  const recentTopPerformer = pageData?.recentTopPerformer;
 
   return (
     <div className="container mx-auto py-8 md:py-12 px-4 md:px-6">
@@ -171,7 +182,7 @@ export default function LandingPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Badges/Person</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg. Badges/Person (Top 100)</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -190,8 +201,8 @@ export default function LandingPage() {
         </Card>
         <Card className="lg:col-span-3">
             <CardHeader>
-                <CardTitle className="text-sm font-medium">Global Completion Rate</CardTitle>
-                 <CardDescription>Average progress across all participants.</CardDescription>
+                <CardTitle className="text-sm font-medium">Global Completion Rate (Top 100)</CardTitle>
+                 <CardDescription>Average progress across top 100 participants.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center gap-4">
@@ -207,7 +218,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center gap-4">
-                    <Progress value={pageData?.swagEligibleCount} className="h-3" />
+                    <Progress value={(pageData?.swagEligibleCount ?? 0)} max={100} className="h-3" />
                     <span className="text-lg font-bold text-primary">{pageData?.swagEligibleCount ?? 0}/100</span>
                 </div>
             </CardContent>
@@ -215,15 +226,15 @@ export default function LandingPage() {
       </section>
 
        <section className="mb-12 md:mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">Global Leaderboard Highlights</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">Leaderboard Highlights</h2>
         <div className="grid gap-8 md:grid-cols-2">
           <Card className="flex flex-col items-center justify-center p-6">
-            <CardTitle className="mb-4">Global Top Performer</CardTitle>
-            {topGlobalPerformer ? (
+            <CardTitle className="mb-4">Recent Top Performer</CardTitle>
+            {recentTopPerformer ? (
               <>
-                <div className="text-xl font-bold mb-2">{topGlobalPerformer.name}</div>
+                <div className="text-xl font-bold mb-2">{recentTopPerformer.name}</div>
                 <div className="text-center">
-                    <span className="text-2xl font-bold text-primary">{topGlobalPerformer.progressPercentage}%</span>
+                    <span className="text-2xl font-bold text-primary">{recentTopPerformer.progressPercentage}%</span>
                     <p className="text-xs text-muted-foreground">Overall Progress</p>
                 </div>
               </>
@@ -250,3 +261,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

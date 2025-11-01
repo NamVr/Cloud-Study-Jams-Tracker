@@ -3,23 +3,9 @@
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 
 export function GdgCuLogo({ className }: { className?: string }) {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    // Render a static placeholder on the server and initial client render
-    // to prevent hydration mismatch.
-    return <div style={{ width: 225, height: 40 }} className={cn("h-10 w-auto", className)} />;
-  }
-
-  const isDark = resolvedTheme === 'dark';
+  const { theme } = useTheme();
 
   return (
     <>
@@ -28,7 +14,7 @@ export function GdgCuLogo({ className }: { className?: string }) {
         alt="GDG CU Logo"
         width={225}
         height={40}
-        className={cn("h-10 w-auto", isDark ? "hidden" : "block", className)}
+        className={cn("h-10 w-auto dark:hidden", className)}
         priority
       />
       <Image
@@ -36,7 +22,7 @@ export function GdgCuLogo({ className }: { className?: string }) {
         alt="GDG CU Logo"
         width={225}
         height={40}
-        className={cn("h-10 w-auto", isDark ? "block" : "hidden", className)}
+        className={cn("h-10 w-auto hidden dark:block", className)}
         priority
       />
     </>
