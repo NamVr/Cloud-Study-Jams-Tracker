@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from 'next/navigation';
-import { Award, RefreshCw } from "lucide-react";
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { Award, Search, X } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -17,9 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress as UiProgress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Medal } from "@/components/icons/medal";
-import { cn } from "@/lib/utils";
 import database from '@/database.json';
 import type { RawParticipant, Team, Participant, Database } from '@/lib/types';
 
@@ -65,10 +65,62 @@ const processData = (db: Database): { participants: Participant[], teams: Team[]
   return { participants: sortedParticipants, teams };
 };
 
+function SearchBar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newQuery) {
+      params.set('q', newQuery);
+    } else {
+      params.delete('q');
+    }
+    // Use router.replace to avoid adding to history
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+  
+  const clearSearch = () => {
+    setQuery('');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('q');
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
+  // Sync state with URL params on navigation
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '');
+  }, [searchParams]);
+  
+  return (
+    <div className="relative w-full max-w-sm">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input 
+        placeholder="Search participant..."
+        className="pl-9"
+        value={query}
+        onChange={handleSearch}
+      />
+      {query && (
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+          onClick={clearSearch}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  )
+}
 
 export default function ProgressPage() {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [allParticipants, setAllParticipants] = useState<Participant[]>([]);
   const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   
@@ -91,18 +143,6 @@ export default function ProgressPage() {
   }, [searchParams, allParticipants]);
 
   const teamsMap = new Map<string, Team>();
-
-  const handleRefresh = () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    // Simulate a refresh, as data is static
-    setTimeout(() => {
-      const { participants: processedParticipants } = processData(database as Database);
-      setAllParticipants(processedParticipants);
-      setLastRefreshed(new Date());
-      setIsRefreshing(false);
-    }, 1000);
-  };
   
   const getTeamInfo = (participantName: string) => {
     const participantData = allParticipants.find(p => p.name === participantName);
@@ -130,16 +170,9 @@ export default function ProgressPage() {
         </AlertDescription>
       </Alert>
       
-      <div className="flex justify-end items-center mb-4 gap-4 text-sm text-muted-foreground">
-         <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
-            {isRefreshing ? "Refreshing..." : "Refresh Data"}
-          </Button>
-        <span>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+         <SearchBar />
+        <span className="text-sm text-muted-foreground">
           Last updated: {lastRefreshed ? lastRefreshed.toLocaleString() : 'Loading...'}
         </span>
       </div>
