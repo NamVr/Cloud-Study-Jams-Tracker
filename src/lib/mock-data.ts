@@ -28,7 +28,7 @@ export const courses: Course[] = [
   { id: 17, title: "Analyze Speech and Language with Google APIs", csbLink: "https://www.cloudskillsboost.google/course_templates/634", difficulty: 'Advanced', progress: 0, solutionUrl: undefined },
   { id: 18, title: "Prompt Design in Vertex AI", csbLink: "https://www.cloudskillsboost.google/course_templates/976", difficulty: 'Advanced', progress: 0, solutionUrl: undefined },
   { id: 19, title: "Develop GenAI Apps with Gemini and Streamlit", csbLink: "https://www.cloudskillsboost.google/course_templates/978", difficulty: 'Advanced', progress: 0, solutionUrl: undefined },
-  { id: 20, title: "Gen AI Arcade Game: Level 3", csbLink: "#", difficulty: 'Advanced', progress: 0, solutionUrl: undefined },
+  { id: 20, title: "Gen AI Arcade Game: Level 3", csbLink: "https://www.skills.google/games/6554", difficulty: 'Advanced', progress: 0, solutionUrl: undefined },
 ];
 
 
